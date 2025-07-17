@@ -199,6 +199,35 @@ const BookingModal = ({ isOpen, onClose, preSelectedService }) => {
       if (response.ok) {
         const data = await response.json()
         setVerificationSession(data)
+        
+        // If it's a mock session, simulate verification completion
+        if (data.mock) {
+          // Show verification in progress message
+          alert('Simulating ID verification... This will complete in 3 seconds.')
+          
+          // Simulate a 3-second verification process
+          setTimeout(async () => {
+            try {
+              // Complete mock verification
+              await fetch('https://wave-house-backend-clean.onrender.com/api/verification/complete-mock', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: formData.email })
+              })
+              
+              // Proceed with booking
+              await proceedWithBooking()
+            } catch (error) {
+              console.error('Mock verification error:', error)
+              alert('Verification failed. Please try again.')
+              setVerificationLoading(false)
+            }
+          }, 3000)
+          
+          return data
+        }
         // Open Stripe Identity verification in new window
         window.open(data.url, '_blank', 'width=600,height=800')
         
