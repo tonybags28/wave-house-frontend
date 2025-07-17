@@ -201,6 +201,34 @@ const BookingModal = ({ isOpen, onClose, preSelectedService }) => {
         setVerificationSession(data)
         // Open Stripe Identity verification in new window
         window.open(data.url, '_blank', 'width=600,height=800')
+        
+        // Add verification completion handler
+        const verificationCheckInterval = setInterval(async () => {
+          try {
+            const checkResponse = await fetch(`https://wave-house-backend-clean.onrender.com/api/verification/check-session/${data.session_id}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            })
+            
+            if (checkResponse.ok) {
+              const checkData = await checkResponse.json()
+              if (checkData.status === 'completed') {
+                clearInterval(verificationCheckInterval)
+                // Verification completed successfully, proceed with booking
+                handleSubmit(new Event('submit'))
+                setVerificationStep('complete')
+              } else if (checkData.status === 'failed') {
+                clearInterval(verificationCheckInterval)
+                alert('Verification failed. Please try again.')
+              }
+            }
+          } catch (error) {
+            console.error('Error checking verification status:', error)
+          }
+        }, 5000) // Check every 5 seconds
+        
         return data
       }
     } catch (error) {
